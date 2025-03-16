@@ -1,0 +1,32 @@
+name: Build
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  macos-build:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+
+      - name: Disable License Manager
+        run: find ./Configurations/Build -type f -name '*.xcconfig' -exec sed -i '' s/TEXTUAL_BUILT_WITH_LICENSE_MANAGER=1/TEXTUAL_BUILT_WITH_LICENSE_MANAGER=0/g {} +
+
+      - name: Empty Code Signing Identity file
+        run: echo "" > "Configurations/Build/Code Signing Identity.xcconfig"
+
+      - name: Build the 'Standard Release' scheme
+        run: xcodebuild -scheme "Textual (Standard Release)" build
+
+      - name: Put the built app in the artifacts directory
+        run: mkdir artifacts && cp -R "Build Results/Release/Textual.app" "artifacts/Textual.app"
+
+      - name: Upload the built app
+        uses: actions/upload-artifact@v4
+        with:
+          name: textual-standard-release
+          path: artifacts
